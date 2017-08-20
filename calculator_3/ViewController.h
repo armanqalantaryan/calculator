@@ -10,6 +10,8 @@
 
 @interface ViewController : UIViewController
 
+- (IBAction)numbers:(UIButton *)sender;
+@property (strong, nonatomic) IBOutlet UILabel *result;
 
 @end
 

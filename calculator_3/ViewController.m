@@ -26,4 +26,10 @@
 }
 
 
+- (IBAction)numbers:(UIButton *)sender
+{
+    NSString* myNewString = [NSString stringWithFormat:@"%@%ld", _result.text, sender.tag-1];
+    
+    _result.text = myNewString;
+}
 @end
