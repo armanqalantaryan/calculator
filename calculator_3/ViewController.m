@@ -32,4 +32,25 @@
     
     _result.text = myNewString;
 }
+
+- (IBAction)equal:(UIButton *)sender {
+}
+
+- (IBAction)plus:(UIButton *)sender {
+}
+
+- (IBAction)minus:(UIButton *)sender {
+}
+
+- (IBAction)multiple:(UIButton *)sender {
+}
+
+- (IBAction)divide:(UIButton *)sender {
+}
+
+- (IBAction)restore:(UIButton *)sender {
+}
+
+
+
 @end

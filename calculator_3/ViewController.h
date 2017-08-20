@@ -11,6 +11,13 @@
 @interface ViewController : UIViewController
 
 - (IBAction)numbers:(UIButton *)sender;
+- (IBAction)equal:(UIButton *)sender;
+- (IBAction)plus:(UIButton *)sender;
+- (IBAction)minus:(UIButton *)sender;
+- (IBAction)multiple:(UIButton *)sender;
+- (IBAction)divide:(UIButton *)sender;
+- (IBAction)restore:(UIButton *)sender;
+
 @property (strong, nonatomic) IBOutlet UILabel *result;
 
 @end
