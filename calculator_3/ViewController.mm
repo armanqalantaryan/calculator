@@ -73,9 +73,6 @@ iCalculator* _calc;
     if(_isoperation == true) return;
     _isoperation = true;
     
-    
-    
-    
     if ([_result.text  isEqual: @""]) return;
     bool res = _calc->setOperation("=", [_result.text doubleValue]);
     if (!res)
@@ -92,7 +89,6 @@ iCalculator* _calc;
     ss << value;            //ss-double
     
     _result.text = [NSString stringWithFormat:@"%s", ss.str().c_str()];
-
 }
 
 - (void)setOperation:(NSString*) op;
@@ -145,7 +141,7 @@ iCalculator* _calc;
 
 - (IBAction)plusminus:(UIButton *)sender
 {
-    _result.text
+    //_result.text;
 }
 
 
