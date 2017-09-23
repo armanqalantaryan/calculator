@@ -19,7 +19,7 @@ iCalculator* createAdvancedCalculator();
 
 
 @implementation ViewController
-bool equalIsActive = false;
+bool _isoperation = false;
 iCalculator* _calc;
 
 
@@ -40,12 +40,6 @@ iCalculator* _calc;
 
 - (IBAction)numbers:(UIButton *)sender
 {
-    if(equalIsActive == true)
-    {
-        _result.text = @"";
-        equalIsActive = false;
-    }
-    
     if([_result.text  isEqual: @"0"])
     {
         if(sender.tag-1 == 0)
@@ -59,7 +53,7 @@ iCalculator* _calc;
     }
     
     NSString* myNewString;
-    if (!_calc->isOperationActive())
+    if (!_isoperation)
     {
         
          myNewString = [NSString stringWithFormat:@"%@%d", _result.text, sender.tag-1];
@@ -70,16 +64,23 @@ iCalculator* _calc;
         _result.text=@"";
         myNewString = [NSString stringWithFormat:@"%@%d", _result.text, sender.tag-1];
          _result.text = myNewString;
-        _calc->resetOperation();
     }
+    _isoperation = false;
 }
 
 - (IBAction)equal:(UIButton *)sender
 {
-    equalIsActive = true;
+    if(_isoperation == true) return;
+    _isoperation = true;
+    
+    
+    
     
     if ([_result.text  isEqual: @""]) return;
-    _calc->setOperation("=", [_result.text doubleValue]);
+    bool res = _calc->setOperation("=", [_result.text doubleValue]);
+    if (!res)
+        return;
+    
     double value = _calc->getResult([_result.text doubleValue]);
     
     _result.numberOfLines                =   2;
@@ -91,50 +92,46 @@ iCalculator* _calc;
     ss << value;            //ss-double
     
     _result.text = [NSString stringWithFormat:@"%s", ss.str().c_str()];
+
+}
+
+- (void)setOperation:(NSString*) op;
+{
+    if(_isoperation == true) return;
+    if ([_result.text  isEqual: @""]) return;   // chpiti @"0" lini
     
+    double currentValue = [_result.text doubleValue];
+    
+    _calc->setOperation([op UTF8String], currentValue);
+    
+    _isoperation = true;
 }
 
 - (IBAction)plus:(UIButton *)sender
 {
-    if ([_result.text  isEqual: @""]) return;   // chpiti @"0" lini
-
-    double currentValue = [_result.text doubleValue];
-    
-    _calc->setOperation("+", currentValue);
-    
+    [self setOperation:@"+"];
 }
 
 - (IBAction)minus:(UIButton *)sender
 {
-    if ([_result.text  isEqual: @""]) return;
-    
-    double currentValue = [_result.text doubleValue];
-    
-    _calc->setOperation("-", currentValue);
+    [self setOperation:@"-"];
 }
 
 - (IBAction)multiple:(UIButton *)sender
 {
-    if ([_result.text  isEqual: @""]) return;
-
-    double currentValue = [_result.text doubleValue];
-    
-    _calc->setOperation("*", currentValue);
+    [self setOperation:@"*"];
 }
 
 - (IBAction)divide:(UIButton *)sender
 {
-    if ([_result.text  isEqual: @""]) return;
-
-    double currentValue = [_result.text doubleValue];
-    
-    _calc->setOperation("/", currentValue);
+    [self setOperation:@"/"];
 }
 
 - (IBAction)restore:(UIButton *)sender
 {
     _calc->reset();
     _result.text = @"0";
+    _isoperation = false;
 }
 
 - (IBAction)dot:(UIButton *)sender
@@ -144,6 +141,11 @@ iCalculator* _calc;
         return;
     }
     _result.text = [NSString stringWithFormat:@"%@%@", _result.text, @"."];
+}
+
+- (IBAction)plusminus:(UIButton *)sender
+{
+    _result.text
 }
 
 

@@ -18,7 +18,7 @@
 - (IBAction)divide:(UIButton *)sender;
 - (IBAction)restore:(UIButton *)sender;
 - (IBAction)dot:(UIButton *)sender;
-
+- (IBAction)plusminus:(UIButton *)sender;
 @property (strong, nonatomic) IBOutlet UILabel *result;
 
 @end

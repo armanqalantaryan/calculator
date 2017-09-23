@@ -17,27 +17,22 @@ class SimpleCalculator : public iCalculator
 {
     double _buff = std::numeric_limits<double>::lowest();
     std::string _lastOperation = "";
-    bool _isOperationActive = false;
+   
     double _lastValue = 0;
 public:
     
     
     virtual bool setOperation(const std::string& op, double value)
     {
-        _isOperationActive = true;
         _lastOperation = op;
         applyBuff(op, value);
         
         return false;
     }
     
-    virtual bool isOperationActive() const
-    {
-        return _isOperationActive;
-    }
     virtual void resetOperation()
     {
-        _isOperationActive = false;
+        
     }
     virtual double getResult(double lastValue)
     {
@@ -51,7 +46,7 @@ public:
     {
         _buff = std::numeric_limits<double>::lowest();
         _lastOperation = "";
-        _isOperationActive = false;
+        
     }
 
 private:
@@ -93,7 +88,7 @@ iCalculator* createSimpleCalculator()
 
 class AdvancedCalculator : public iCalculator
 {
-    bool _isOperationActive = false;
+    
 
     std::stack<double> numbersStack;
     std::stack<std::string> operationStack;
@@ -103,28 +98,35 @@ class AdvancedCalculator : public iCalculator
         numbersStack.pop();
         return n;
     }
-    
-    std::string operationPop()
+    void reverse(std::stack<double>& stk)
     {
-        const std::string& op = operationStack.top();
-        operationStack.pop();
-        return op;
+        std::stack<double> temp;
+    
+        while(! stk.empty())
+        {
+            temp.push(stk.top());
+            stk.pop();
+        }
+    
+        stk = temp;
     }
 
 public:
     
     virtual bool setOperation(const std::string& op, double value) override
     {
-        _isOperationActive = true;
-
         if(numbersStack.empty())
         {
+            if (op == "=")
+                return false;
             numbersStack.push(value);
             operationStack.push(op);
             return false;
         }
         
-        if(operationStack.top() == "*")
+        auto top = operationStack.top();
+        
+        if(top == "*")
         {
             double n = numberPop();
             numbersStack.push(n*value);
@@ -132,7 +134,7 @@ public:
             if (op != "=")
                 operationStack.push(op);
         }
-        else if(operationStack.top()== "/")
+        else if(top == "/")
         {
             double n = numberPop();
             numbersStack.push(n/value);
@@ -140,28 +142,32 @@ public:
             if (op != "=")
                 operationStack.push(op);
         }
-        else
+        else if(top =="-")
+        {
+            numbersStack.push(-value);
+            operationStack.pop();
+            operationStack.push("+");
+            
+            if (op != "=")
+                operationStack.push(op);
+        }
+        else if (top == "+")
         {
             numbersStack.push(value);
             if (op != "=")
                 operationStack.push(op);
         }
-        
-        if(operationStack.size() == 1)
-            return false;
-        
+        else
+        {
+            assert(false);
+        }
+
+                
         return true;
-    }
-    
-   virtual bool isOperationActive() const override
-    {
-        return _isOperationActive;
     }
     
     virtual  void reset() override
     {
-        _isOperationActive = false;
-
         while(!operationStack.empty())
         {
             operationStack.pop();
@@ -174,27 +180,25 @@ public:
     
     virtual double getResult(double x) override
     {
+        
         while(numbersStack.size() != 1)
         {
             const double v1 = numberPop();
             const double v2 = numberPop();
             
-            if (operationPop() == "+")
+            if (operationStack.top() == "+")
             {
                 numbersStack.push(v1 + v2);
             }
             else
             {
+                assert(operationStack.top() == "-");
                 numbersStack.push(v2 - v1);
             }
+            operationStack.pop();
         }
 
        return numbersStack.top();
-    }
-    
-    virtual void resetOperation() override
-    {
-        
     }
 };
 
