@@ -19,8 +19,11 @@ iCalculator* createAdvancedCalculator();
 
 
 @implementation ViewController
-bool _isoperation = false;
+std::string _op = "";
+double _lastValue;
 iCalculator* _calc;
+bool _canSend = false;
+bool _isNeedClear = false;
 
 
 - (void)viewDidLoad {
@@ -28,6 +31,7 @@ iCalculator* _calc;
     
     _calc = createAdvancedCalculator();
     _result.text = @"0";
+    
     // Do any additional setup after loading the view, typically from a nib.
 }
 
@@ -40,6 +44,13 @@ iCalculator* _calc;
 
 - (IBAction)numbers:(UIButton *)sender
 {
+    if (_canSend)
+    {
+        _calc->setOperation(_op, _lastValue);
+        //_op = "";
+        _canSend = false;
+    }
+    
     if([_result.text  isEqual: @"0"])
     {
         if(sender.tag-1 == 0)
@@ -53,30 +64,29 @@ iCalculator* _calc;
     }
     
     NSString* myNewString;
-    if (!_isoperation)
-    {
-        
-         myNewString = [NSString stringWithFormat:@"%@%d", _result.text, sender.tag-1];
-         _result.text = myNewString;
-    }
-    else
+    if (_isNeedClear)
     {
         _result.text=@"";
-        myNewString = [NSString stringWithFormat:@"%@%d", _result.text, sender.tag-1];
-         _result.text = myNewString;
+        _isNeedClear = false;
     }
-    _isoperation = false;
+    
+    myNewString = [NSString stringWithFormat:@"%@%ld", _result.text, sender.tag-1];
+    _result.text = myNewString;
 }
 
 - (IBAction)equal:(UIButton *)sender
 {
-    if(_isoperation == true) return;
-    _isoperation = true;
+    if(_op.empty())
+        return;
+    _op = "=";
     
     if ([_result.text  isEqual: @""]) return;
-    bool res = _calc->setOperation("=", [_result.text doubleValue]);
+    bool res = _calc->setOperation(_op, [_result.text doubleValue]);
     if (!res)
+    {
         return;
+        //_calc->setOperation("=", [_result.text doubleValue]);
+    }
     
     double value = _calc->getResult([_result.text doubleValue]);
     
@@ -91,43 +101,41 @@ iCalculator* _calc;
     _result.text = [NSString stringWithFormat:@"%s", ss.str().c_str()];
 }
 
-- (void)setOperation:(NSString*) op;
+
+-(void) operation: (NSString*) op
 {
-    if(_isoperation == true) return;
-    if ([_result.text  isEqual: @""]) return;   // chpiti @"0" lini
+    _canSend = true;
+    _isNeedClear = true;
     
-    double currentValue = [_result.text doubleValue];
-    
-    _calc->setOperation([op UTF8String], currentValue);
-    
-    _isoperation = true;
+    _op = [op UTF8String];
+    _lastValue = [_result.text doubleValue];
 }
 
 - (IBAction)plus:(UIButton *)sender
 {
-    [self setOperation:@"+"];
+    [self operation:@"+"];
 }
 
 - (IBAction)minus:(UIButton *)sender
 {
-    [self setOperation:@"-"];
+    [self operation:@"-"];
 }
 
 - (IBAction)multiple:(UIButton *)sender
 {
-    [self setOperation:@"*"];
+    [self operation:@"*"];
 }
 
 - (IBAction)divide:(UIButton *)sender
 {
-    [self setOperation:@"/"];
+    [self operation:@"/"];
 }
 
 - (IBAction)restore:(UIButton *)sender
 {
     _calc->reset();
     _result.text = @"0";
-    _isoperation = false;
+    _op = "";
 }
 
 - (IBAction)dot:(UIButton *)sender
@@ -141,7 +149,10 @@ iCalculator* _calc;
 
 - (IBAction)plusminus:(UIButton *)sender
 {
-    //_result.text;
+   
+    int x = [_result.text intValue];
+    x=-x;
+     _result.text = [NSString stringWithFormat:@"%d", x];
 }
 
 

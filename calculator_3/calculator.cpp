@@ -88,90 +88,59 @@ iCalculator* createSimpleCalculator()
 
 class AdvancedCalculator : public iCalculator
 {
-    
-
     std::stack<double> numbersStack;
-    std::stack<std::string> operationStack;
+    std::string _op = "";
+    
     double numberPop()
     {
        double n = numbersStack.top();
         numbersStack.pop();
         return n;
     }
-    void reverse(std::stack<double>& stk)
-    {
-        std::stack<double> temp;
     
-        while(! stk.empty())
-        {
-            temp.push(stk.top());
-            stk.pop();
-        }
-    
-        stk = temp;
-    }
-
 public:
     
     virtual bool setOperation(const std::string& op, double value) override
     {
         if(numbersStack.empty())
         {
-            if (op == "=")
-                return false;
             numbersStack.push(value);
-            operationStack.push(op);
+            _op = op;
             return false;
         }
         
-        auto top = operationStack.top();
-        
-        if(top == "*")
+        if(_op == "*")
         {
             double n = numberPop();
             numbersStack.push(n*value);
-            operationStack.pop();
-            if (op != "=")
-                operationStack.push(op);
         }
-        else if(top == "/")
+        else if(_op == "/")
         {
             double n = numberPop();
             numbersStack.push(n/value);
-            operationStack.pop();
-            if (op != "=")
-                operationStack.push(op);
         }
-        else if(top =="-")
+        else if(_op =="-")
         {
             numbersStack.push(-value);
-            operationStack.pop();
-            operationStack.push("+");
-            
-            if (op != "=")
-                operationStack.push(op);
         }
-        else if (top == "+")
+        else if (_op == "+")
         {
             numbersStack.push(value);
-            if (op != "=")
-                operationStack.push(op);
         }
         else
         {
             assert(false);
         }
-
-                
+        if(op != "=")
+            _op = op;
+        
         return true;
     }
     
     virtual  void reset() override
     {
-        while(!operationStack.empty())
-        {
-            operationStack.pop();
-        }
+        _op = "";
+        
         while(!numbersStack.empty())
         {
             numbersStack.pop();
@@ -186,19 +155,12 @@ public:
             const double v1 = numberPop();
             const double v2 = numberPop();
             
-            if (operationStack.top() == "+")
-            {
-                numbersStack.push(v1 + v2);
-            }
-            else
-            {
-                assert(operationStack.top() == "-");
-                numbersStack.push(v2 - v1);
-            }
-            operationStack.pop();
+            numbersStack.push(v1 + v2);
         }
-
-       return numbersStack.top();
+        
+        const auto value = numbersStack.top();
+        numbersStack.pop();
+        return value;
     }
 };
 
