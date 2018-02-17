@@ -12,10 +12,28 @@
 #include <cassert>
 #include <queue>
 #include <stack>
+#include <set>
+#include <fstream>
+#include <tuple>
 
 using namespace std;
 
 enum class Color {WHITE, GREY, BLACk};
+
+
+class NotUniqueException
+{
+    string _message;
+public:
+    
+    NotUniqueException(const string& message)
+        : _message(message)
+    {}
+    string what() const
+    {
+        return _message;
+    }
+};
 
 // Component
 struct iNode
@@ -28,16 +46,19 @@ struct iNode
     virtual Color getColor() const = 0;
     virtual void setLevel(int) = 0;
     virtual int getLevel() const = 0;
-    
+    virtual iNode* getParent() const = 0;
+    virtual void setParent(iNode* p) = 0;
 };
 
 // Composite
 class Node : public iNode
 {
     int value = 0;
+    iNode* parent = nullptr;
     vector<iNode* > children;
     Color _color = Color::WHITE;
     int _level = 0;
+    int _searchValue = 0;
     
 public:
     
@@ -45,7 +66,7 @@ public:
     {
         
     }
-    
+   
     virtual void setColor(Color color)
     {
         _color = color;
@@ -67,8 +88,9 @@ public:
     }
     
     virtual iNode* add(int val)
-    {
-        children.push_back(new Node(val));
+    {   iNode* x = new Node(val);
+        x->setParent(this);
+        children.push_back(x);
         return children.back();
     }
     
@@ -82,9 +104,20 @@ public:
         assert(index >=0 && index < children.size());
         return children[index];
     }
+    
     int getValue() const
     {
         return value;
+    }
+    
+    virtual iNode* getParent() const
+    {
+        return parent;
+    }
+    
+    virtual void setParent(iNode* p)
+    {
+        parent = p;
     }
 };
 
@@ -92,59 +125,133 @@ public:
 class graph
 {
     iNode* _root = nullptr;
+    std::set<int> ids;
+    std::string _path = "output"; // output file path
+    
 public:
     
     graph(int value = 0)
     {
         _root = new Node(value);
+        ids.insert(value);
     }
     
-    iNode* root()
+    void print(const std::string& path)
     {
-        return _root;
+        _path = path;
+        ofstream f(_path);
+        f.close();
+        
+        BFSiterative();
+        DFSRecursive();
     }
     
     void print()
     {
-        BFSiterative();
-        DFSIterative();
+        print(_path);
     }
     
+    void insert (int i, int j)
+    {
+        auto node = find(i);
+        if (node)
+        {
+            if (ids.count(j) == 0)
+            {
+                node->add(j);
+                ids.insert(j);
+            }
+            else
+            {
+                throw NotUniqueException("Child id is not unique!");
+            }
+        }
+        else
+        {
+            throw NotUniqueException("Parent does not exist!");
+        }
+    }
+
 private:
     
-    void DFS()
+    iNode* find(int i)
     {
-        printLevel(_root->getValue(), _root->getLevel());
-        DFSPrivate(_root);
+        auto colors = color();
+        
+        stack<iNode*> s;
+        s.push(_root);
+        
+        while(!s.empty())
+        {
+            auto node = s.top();
+            if (node->getValue() == i)
+            {
+                while(!s.empty())
+                {
+                    auto n = s.top();
+                    n->setColor(colors.end);
+                    s.pop();
+                }
+                return node;
+            }
+            
+            if(node->getColor() == Color::GREY)
+            {
+                node->setColor(colors.end);
+                s.pop();
+            }
+            if(node->getColor() == colors.start)
+            {
+                for(int i=0;i<node->getChildrenCount();++i)
+                {
+                    auto c = node->getChild(i);
+                    s.push(c);
+                }
+                node->setColor(Color::GREY);
+            }
+        }
+        
+        return nullptr;
     }
     
-    void DFSPrivate(iNode* node)
+private:     ///
+    
+    void DFSRecursive()
     {
-        if (node->getChildrenCount() == 0)
-            return;
-        
+        printLevel(_root->getValue(), _root->getLevel());
+        DFSRecursivePrivate(_root);
+    }
+    
+    void DFSRecursivePrivate(iNode* node)
+    {
         for (int i = 0; i < node->getChildrenCount(); ++i)
         {
             auto c = node->getChild(i);
-            
             printLevel(c->getValue(), c->getLevel());
-            DFSPrivate(c);
+            DFSRecursivePrivate(c);
         }
     }
     
-    void BFS()
+    void BFSRecursive()
     {
-        BFSPrivate(_root);
+        BFSRecursivePrivate(_root);
     }
     
-    void BFSPrivate(iNode* n)
+    void BFSRecursivePrivate(iNode* n)
     {
+        
         for(int i = 0; i < n->getChildrenCount(); ++i)
         {
             auto child = n->getChild(i);
             child->setLevel(n->getLevel() + 1);
-            BFSPrivate(child);
         }
+        
+        for(int i = 0; i < n->getChildrenCount(); ++i)
+        {
+            auto child = n->getChild(i);
+            BFSRecursivePrivate(child);
+        }
+
     }
     
     void BFSiterative()
@@ -171,7 +278,7 @@ private:
             q.pop();
         }
     }
-    
+
     void DFSIterative()
     {
         auto colors = color();
@@ -200,7 +307,6 @@ private:
         }
     }
     
-    
     struct Colors
     {
         Color start,end;
@@ -226,30 +332,34 @@ private:
     
     void printLevel(int value, int count)
     {
+        ofstream f(_path, ios::app);
         for (int i = 0; i < count; ++i)
-            cout << "_";
-        cout << value << endl;
+            f << "| ";
+        f << value << "\n";
+        f.close();
     }
 };
 
 int main()
 {
-    graph g;
-    
-    iNode* p = g.root();
-    auto p4 = p->add(4);
-    p4->add(12);
-    p4->add(13)->add(14);
-    p->add(5);
-    p->add(6);
-    iNode* p2 = p->add(7);
-    p2->add(8);
-    p2->add(9);
-    auto p3 = p2->add(10);
-    p3->add(11);
-    
-    g.print();
-    
+    try
+    {
+        graph g(1);
+        for (int i = 1 ; i < 10; ++i)
+        {
+            g.insert(i, i + 1);
+
+        }
+        
+        g.print();
+        g.insert(8, 7);
+        //g.remove(8);
+        g.print();
+    }
+    catch (NotUniqueException& e)
+    {
+        cout << e.what() << endl;
+    }
     return 0;
 }
 
