@@ -8,7 +8,7 @@
 
 #include "iNode.h"
 #include "iGraph.hpp"
-#include "iGraphTest.h"
+#include "iTestGraph.h"
 
 #include <set>
 #include <fstream>
@@ -270,16 +270,16 @@ protected:     ///
     }
 };
 
-class GraphTest : public iGraphTest, public Graph
+class GraphTest : public iGraphTest
 {
 public:
     
     void run() override
     {
-        DFSIterativeTest();
+        //DFSIterativeTest();
     }
     
-    GraphTest(int n = 0) : Graph(n)
+    /*GraphTest(int n = 0) : Graph(n)
     {
         
     }
@@ -287,7 +287,7 @@ public:
     void DFSIterativeTest()
     {
         DFSIterative();
-    }
+    }*/
 };
 
 iGraphTest* createGraphTest()
