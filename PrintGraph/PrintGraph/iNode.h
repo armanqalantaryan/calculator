@@ -9,6 +9,8 @@
 #ifndef Header_h
 #define Header_h
 
+#include <stddef.h>
+
 enum class Color {WHITE, GREY, BLACk};
 
 struct iNode
