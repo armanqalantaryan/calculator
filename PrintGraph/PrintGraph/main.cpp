@@ -15,12 +15,13 @@
 #include <set>
 #include <fstream>
 #include <tuple>
+#include "iNode.h"
+
 
 using namespace std;
 
-enum class Color {WHITE, GREY, BLACk};
 
-
+iNode* createNode(int);
 class NotUniqueException
 {
     string _message;
@@ -36,93 +37,13 @@ public:
 };
 
 // Component
-struct iNode
-{
-    virtual iNode* add(int value) = 0;
-    virtual size_t getChildrenCount() const = 0;
-    virtual iNode* getChild(int index) = 0;
-    virtual int getValue() const = 0;
-    virtual void setColor(Color color) = 0;
-    virtual Color getColor() const = 0;
-    virtual void setLevel(int) = 0;
-    virtual int getLevel() const = 0;
-    virtual iNode* getParent() const = 0;
-    virtual void setParent(iNode* p) = 0;
-};
+
 
 // Composite
-class Node : public iNode
-{
-    int value = 0;
-    iNode* parent = nullptr;
-    vector<iNode* > children;
-    Color _color = Color::WHITE;
-    int _level = 0;
-    int _searchValue = 0;
-    
-public:
-    
-    Node(int n) : value(n)
-    {
-        
-    }
-   
-    virtual void setColor(Color color)
-    {
-        _color = color;
-    }
-    
-    virtual Color getColor() const
-    {
-        return _color;
-    }
-    
-    virtual void setLevel(int level)
-    {
-        _level = level;
-    }
-    
-    virtual int getLevel() const
-    {
-        return _level;
-    }
-    
-    virtual iNode* add(int val)
-    {   iNode* x = new Node(val);
-        x->setParent(this);
-        children.push_back(x);
-        return children.back();
-    }
-    
-    size_t getChildrenCount() const
-    {
-        return children.size();
-    }
-    
-    iNode* getChild(int index)
-    {
-        assert(index >=0 && index < children.size());
-        return children[index];
-    }
-    
-    int getValue() const
-    {
-        return value;
-    }
-    
-    virtual iNode* getParent() const
-    {
-        return parent;
-    }
-    
-    virtual void setParent(iNode* p)
-    {
-        parent = p;
-    }
-};
+
 
 // Client
-class graph
+class Graph
 {
     iNode* _root = nullptr;
     std::set<int> ids;
@@ -130,9 +51,9 @@ class graph
     
 public:
     
-    graph(int value = 0)
+    Graph(int value = 0)
     {
-        _root = new Node(value);
+        _root = createNode(value);
         ids.insert(value);
     }
     
@@ -142,13 +63,31 @@ public:
         ofstream f(_path);
         f.close();
         
-        BFSiterative();
+        BFSRecursive();
         DFSRecursive();
     }
     
     void print()
     {
         print(_path);
+    }
+    
+    bool remove (int value)
+    {
+        auto node = find(value);
+        
+        if(!node)
+            return false;
+        
+        auto parent = node->getParent();
+        for(int i = 0;i<node->getChildrenCount();i++)
+        {
+            auto child = node->getChild(i);
+            parent->add(child);
+        }
+        
+        delete node;
+        return true;
     }
     
     void insert (int i, int j)
@@ -214,7 +153,7 @@ private:
         return nullptr;
     }
     
-private:     ///
+protected:     ///
     
     void DFSRecursive()
     {
@@ -340,26 +279,39 @@ private:     ///
     }
 };
 
+class GraphTest : public Graph
+{
+public:
+    
+    GraphTest(int n = 0) : Graph(n)
+    {
+        
+    }
+    
+    void DFSIterativeTest()
+    {
+        DFSIterative();
+    }
+};
+
+bool testDFSRecursive()
+{
+    GraphTest g(1);
+    g.insert(1, 3);
+    
+
+    g.DFSIterativeTest();
+    
+
+    return true;
+}
+
 int main()
 {
-    try
-    {
-        graph g(1);
-        for (int i = 1 ; i < 10; ++i)
-        {
-            g.insert(i, i + 1);
+    if (testDFSRecursive())
+        cout << "PASS" << endl;
+    else
+        cout << "FAIL" << endl;
 
-        }
-        
-        g.print();
-        g.insert(8, 7);
-        //g.remove(8);
-        g.print();
-    }
-    catch (NotUniqueException& e)
-    {
-        cout << e.what() << endl;
-    }
-    return 0;
 }
 
