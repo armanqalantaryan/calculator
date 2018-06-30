@@ -16,16 +16,17 @@
 #include <cassert>
 #include <queue>
 #include <stack>
+#include <iostream>
 
 iNode* createNode(int);
 
-class NotUniqueException
+class BaseExeption            /////
 {
     std::string _message;
 public:
     
-    NotUniqueException(const std::string& message)
-    : _message(message)
+    BaseExeption(const std::string& message)
+        : _message(message)
     {}
     std::string what() const
     {
@@ -33,13 +34,29 @@ public:
     }
 };
 
+struct ChildNotUnique : public BaseExeption
+{
+    ChildNotUnique(const std::string& message)
+        : BaseExeption(message)
+    {}
+};
+
+struct ParentNotFound : public BaseExeption
+{
+    ParentNotFound(const std::string& message)
+        : BaseExeption(message)
+    {}
+};
+
+class GraphTest;
 
 class Graph : public iGraph
 {
     iNode* _root = nullptr;
     std::set<int> ids;
-    std::string _path = "output"; // output file path
+    std::string _path = "output";                     // output file path
     
+    friend class GraphTest;
 public:
     
     Graph(int value = 0)
@@ -48,25 +65,29 @@ public:
         ids.insert(value);
     }
     
-    void print(const std::string& path)
+    ~Graph()
+    {
+        
+    }
+    
+    void print(const std::string& path) override
     {
         _path = path;
         std::ofstream f(_path);
         f.close();
         
-        BFSRecursive();
+        BFSiterative();
         DFSRecursive();
     }
     
-    void print()
+    void print() override
     {
         print(_path);
     }
     
-    bool remove (int value)
+    bool remove (int value) override
     {
         auto node = find(value);
-        
         if(!node)
             return false;
         
@@ -77,28 +98,36 @@ public:
             parent->add(child);
         }
         
+        int _value = node->getValue();
+        ids.erase(_value);
+        
+        parent->remove(node);
+        
         delete node;
+        node = nullptr;
         return true;
     }
-    
-    void insert (int i, int j)
+        
+    void insert (int i, int j) override
     {
         auto node = find(i);
         if (node)
         {
             if (ids.count(j) == 0)
             {
-                node->add(j);
+                auto node_child = createNode(j);
+                node_child->setColor(color().start);
+                node->add(node_child);
                 ids.insert(j);
             }
             else
             {
-                throw NotUniqueException("Child id is not unique!");
+                throw ChildNotUnique("Child id is not unique!");
             }
         }
         else
         {
-            throw NotUniqueException("Parent does not exist!");
+            throw ParentNotFound("Parent does not exist!");
         }
     }
     
@@ -107,44 +136,30 @@ private:
     iNode* find(int i)
     {
         auto colors = color();
-        
-        std::stack<iNode*> s;
-        s.push(_root);
-        
-        while(!s.empty())
+        std::queue<iNode *> q;
+        iNode* found = nullptr;
+
+        q.push(_root);
+        while(!q.empty())
         {
-            auto node = s.top();
+            auto node = q.front();
             if (node->getValue() == i)
             {
-                while(!s.empty())
-                {
-                    auto n = s.top();
-                    n->setColor(colors.end);
-                    s.pop();
-                }
-                return node;
+                found = node;
             }
             
-            if(node->getColor() == Color::GREY)
+            for(int i=0; i<node->getChildrenCount(); ++i)
             {
-                node->setColor(colors.end);
-                s.pop();
+                auto c = node->getChild(i);
+                c->setLevel(node->getLevel() + 1);
+                q.push(c);
             }
-            if(node->getColor() == colors.start)
-            {
-                for(int i=0;i<node->getChildrenCount();++i)
-                {
-                    auto c = node->getChild(i);
-                    s.push(c);
-                }
-                node->setColor(Color::GREY);
-            }
+            node->setColor(colors.end);
+            q.pop();
         }
-        
-        return nullptr;
+
+        return found;
     }
-    
-protected:     ///
     
     void DFSRecursive()
     {
@@ -187,7 +202,6 @@ protected:     ///
     void BFSiterative()
     {
         auto colors = color();
-        
         std::queue<iNode *> q;
         
         q.push(_root);
@@ -195,14 +209,11 @@ protected:     ///
         {
             auto node = q.front();
             
-            if(node->getColor() == colors.start)
+            for(int i=0; i<node->getChildrenCount(); ++i)
             {
-                for(int i=0; i<node->getChildrenCount(); ++i)
-                {
-                    auto c = node->getChild(i);
-                    c->setLevel(node->getLevel() + 1);
-                    q.push(c);
-                }
+                auto c = node->getChild(i);
+                c->setLevel(node->getLevel() + 1);
+                q.push(c);
             }
             node->setColor(colors.end);
             q.pop();
@@ -268,7 +279,17 @@ protected:     ///
         f << value << "\n";
         f.close();
     }
+    
+    iNode* getRoot()
+    {
+        return _root;
+    }
 };
+
+// GRAPH TEST
+
+#define START_TEST \
+std::cout << __func__ << " : ";
 
 class GraphTest : public iGraphTest
 {
@@ -276,18 +297,198 @@ public:
     
     void run() override
     {
-        //DFSIterativeTest();
+        test_find_positive();
+        test_find_negative();
+        test_insert_positive();
+        test_insert_negative1();
+        test_insert_negative2();
+        test_insert_negative3();
+        test_remove_positive1();
+        test_remove_positive2();
+        test_remove_negative();
     }
     
-    /*GraphTest(int n = 0) : Graph(n)
+private:
+    
+    void test_print()
     {
+        auto graph =  create_graph();
+        graph->print("arman.txt");
+    }
+    
+    void test_remove_positive1()
+    {
+        START_TEST
+        auto graph = create_graph();
+        graph->remove(13);
+        auto notFound = graph->find(13);
+        isFalse(isValid(notFound));
+    }
+
+    void test_remove_positive2()
+    {
+        START_TEST
+        auto graph = create_graph();
         
+        auto n6 = graph->find(6);
+        
+        auto ch10 = n6->getChild(0);
+        auto ch9 = n6->getChild(1);
+
+        bool res = ch9->getParent()->getValue() == 6;
+        res &= ch10->getParent()->getValue() == 6;
+        
+        graph->remove(6);
+        
+        res &= ch9->getParent()->getValue() == 2;
+        res &= ch10->getParent()->getValue() == 2;
+
+        auto notFound = graph->find(6);
+        
+        res &= notFound == nullptr;
+        
+        isTrue(res);
     }
     
-    void DFSIterativeTest()
+    void test_remove_negative()
     {
-        DFSIterative();
-    }*/
+        START_TEST
+        auto graph = create_graph();
+        isFalse(graph->remove(23));
+    }
+    
+    void test_insert_positive()
+    {
+        START_TEST
+        auto graph = create_graph();
+        graph->insert(14 , 15);
+        auto ret = isValid(graph->find(15));
+        isTrue(ret);
+    }
+
+    void test_insert_negative1()
+    {
+        START_TEST
+        auto graph = create_graph();
+        
+        try
+        {
+            graph->insert(15, 17);
+        }
+        catch (ParentNotFound e)
+        {
+            isTrue(true);
+            return;
+        }
+        
+        isTrue(false);
+    }
+    
+    void test_insert_negative2()
+    {
+        START_TEST
+        auto graph = create_graph();
+        
+        try
+        {
+            graph->insert(14, 11);
+        }
+        catch (ChildNotUnique e)
+        {
+            isTrue(true);
+            return;
+        }
+        
+        isTrue(false);
+    }
+    
+    void test_insert_negative3()
+    {
+        START_TEST
+        auto graph = create_graph();
+        
+        try
+        {
+            graph->insert(7, 11);
+        }
+        catch (ChildNotUnique e)
+        {
+            isTrue(true);
+            return;
+        }
+        
+        isTrue(false);
+    }
+    
+    void test_find_positive()
+    {
+        START_TEST
+        auto graph =  create_graph();
+        
+        bool ret = true;
+        for(int i = 1; i<14; ++i)
+        {
+            ret &= isValid(graph->find(i));
+        }
+        isTrue(ret);
+    }
+    
+    void test_find_negative()
+    {
+        START_TEST
+        auto graph =  create_graph();
+
+        bool ret = false;
+        for(int i = 15; i<20; ++i)
+        {
+            if (isValid(graph->find(i)) == true)
+                ret = true;
+        }
+        
+        isFalse(ret);
+    }
+    
+    std::unique_ptr<Graph> create_graph()
+    {
+        auto g = std::unique_ptr<Graph>(new Graph(1));
+        
+        g->insert(1,2);
+        g->insert(1,3);
+        g->insert(1,4);
+        
+        g->insert(2,5);
+        g->insert(2,6);
+        
+        g->insert(6,9);
+        g->insert(6,10);
+        
+        g->insert(3,7);
+        
+        g->insert(7,11);
+        g->insert(7,12);
+        g->insert(7,13);
+
+        g->insert(13,14);
+        
+        g->insert(4,8);
+
+        return g;
+    }
+    
+    bool isValid(iNode* node)
+    {
+        return node != nullptr;
+    }
+    
+    void isTrue(bool b)
+    {
+        b ? std::cout << "PASS\n" : std::cout << "FAIL\n";
+    }
+    
+    void isFalse(bool b)
+    {
+        !b ? std::cout << "PASS\n" : std::cout << "FAIL\n";
+    }
 };
 
 iGraphTest* createGraphTest()

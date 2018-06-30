@@ -6,29 +6,12 @@
 //  Copyright © 2017 Paruir. All rights reserved.
 //
 
-#include <iostream>
-#include "iGraph.hpp"
+#include "iTestGraph.h"
 
-
-
-bool testDFSRecursive()
-{
-    //GraphTest g(1);
-    //g.insert(1, 3);
-    
-
-    //g.DFSIterativeTest();
-    
-
-    return true;
-}
+iGraphTest* createGraphTest();
 
 int main()
 {
-    if (testDFSRecursive())
-        std::cout << "PASS" << std::endl;
-    else
-        std::cout << "FAIL" << std::endl;
-
+    createGraphTest()->run();
 }
 

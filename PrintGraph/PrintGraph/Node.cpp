@@ -10,16 +10,13 @@
 #include <vector>
 #include <cassert>
 
-
-
 class Node : public iNode
 {
     int value = 0;
     iNode* parent = nullptr;
-    std::vector<iNode* > children;
+    std::vector< iNode* > children;
     Color _color = Color::WHITE;
     int _level = 0;
-    int _searchValue = 0;
     
 public:
     
@@ -28,63 +25,82 @@ public:
         
     }
     
-    virtual void setColor(Color color)
+    ~Node()
+    {
+        children.clear();
+    }
+    
+    void setColor(Color color) override
     {
         _color = color;
     }
     
-    virtual Color getColor() const
+    Color getColor() const override
     {
         return _color;
     }
     
-    virtual void setLevel(int level)
+    void setLevel(int level) override
     {
         _level = level;
     }
     
-    virtual int getLevel() const
+    int getLevel() const override
     {
         return _level;
     }
     
-    virtual iNode* add(int val)
-    {   iNode* x = new Node(val);
+    iNode* add(int val) override
+    {
+        iNode* x = new Node(val);
         x->setParent(this);
         children.push_back(x);
         return children.back();
     }
-    virtual void add(iNode* n)
+    
+    void add(iNode* n) override
     {
         n->setParent(this);
         children.push_back(n);
     }
-    size_t getChildrenCount() const
+    
+    bool remove(iNode* node) override
+    {
+        auto it = std::find(children.begin(), children.end(), node);       /////////
+        if (it == children.end())
+            return false;
+        
+        children.erase(it);
+        return true;
+    }
+    
+    size_t getChildrenCount() const override
     {
         return children.size();
     }
     
-    iNode* getChild(int index)
+    iNode* getChild(int index) override
     {
         assert(index >=0 && index < children.size());
         return children[index];
     }
     
-    int getValue() const
+    int getValue() const override
     {
         return value;
     }
     
-    virtual iNode* getParent() const
+    iNode* getParent() const override
     {
         return parent;
     }
     
-    virtual void setParent(iNode* p)
+    void setParent(iNode* p) override
     {
         parent = p;
     }
 };
+
 iNode* createNode(int value)
 {
     return new Node(value);
